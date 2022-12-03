@@ -1,15 +1,16 @@
-FROM node:10-alpine
-RUN mkdir /app
+FROM node:lts-alpine
+
+RUN apk add --no-cache tini git
+RUN git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git /app
+RUN chown -R node:node /app
+
+ENV NODE_ENV production
+USER node
+
 WORKDIR /app
 
-RUN apk add --no-cache make gcc g++ python git sed && \
-    git clone https://github.com/Binaryify/NeteaseCloudMusicApi.git . && \
-     sed -i 's/let headers = {/let headers = {"X-Real-IP":`36\.\${Math\.floor(Math\.random() \* 64) + 128}\.\${Math\.floor(Math\.random() \* 255) + 1}\.\${Math.floor(Math\.random() \* 255) + 1}`,/g' ./util/request.js && \
-    npm install --production && \
-    npm cache clean --force && \
-    apk del make gcc g++ python sed
-    
-ENV NODE_ENV=production
-EXPOSE 3000
-CMD ["node", "app.js"]
+RUN npm i --omit=dev --ignore-scripts
 
+EXPOSE 3000
+
+CMD [ "/sbin/tini", "--", "node", "app.js" ]
